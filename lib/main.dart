@@ -22,13 +22,13 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
-          primaryColor: AppColors.jadeGreen,
-        ),
+            primarySwatch: Colors.blue,
+            primaryColor: AppColors.jadeGreen,
+            bottomSheetTheme: BottomSheetThemeData(backgroundColor: Colors.transparent)),
         initialRoute: '/',
         routes: {
           '/': (context) => SplashScreen(),
-          '/second': (context) => UsersListScreen(),
+          '/listScreen': (context) => UsersListScreen(),
         },
       ),
     );
