@@ -1,14 +1,14 @@
 class Model {
-  List<Results>? results;
+  List<User>? results;
   Info? info;
 
   Model({this.results, this.info});
 
   Model.fromJson(Map<String, dynamic> json) {
     if (json['results'] != null) {
-      results = <Results>[];
+      results = <User>[];
       json['results'].forEach((v) {
-        results!.add(new Results.fromJson(v));
+        results!.add(new User.fromJson(v));
       });
     }
     info = json['info'] != null ? new Info.fromJson(json['info']) : null;
@@ -26,7 +26,7 @@ class Model {
   }
 }
 
-class Results {
+class User {
   String? gender;
   Name? name;
   Location? location;
@@ -40,7 +40,7 @@ class Results {
   Picture? picture;
   String? nat;
 
-  Results(
+  User(
       {this.gender,
       this.name,
       this.location,
@@ -54,7 +54,7 @@ class Results {
       this.picture,
       this.nat});
 
-  Results.fromJson(Map<String, dynamic> json) {
+  User.fromJson(Map<String, dynamic> json) {
     gender = json['gender'];
     name = json['name'] != null ? new Name.fromJson(json['name']) : null;
     location = json['location'] != null

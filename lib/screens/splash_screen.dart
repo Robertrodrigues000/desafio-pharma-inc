@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:pharmaapp/constants/colors.dart';
 
@@ -13,8 +15,8 @@ class SplashScreen extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: [
-                AppColors.deepBlue,
-                AppColors.jadeGreen,
+                AppColors.lightBlue,
+                Colors.white,
               ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
             ),
           ),
@@ -22,12 +24,25 @@ class SplashScreen extends StatelessWidget {
             onTap: () => Navigator.pushNamed(context, '/listScreen'),
             child: Center(
               child: Container(
-                // color: Colors.white,
-                width: 360,
-                child: Image.asset(
-                  "assets/images/logo.png",
-                  fit: BoxFit.contain,
-                ),
+                width: 300,
+                child: Stack(children: [
+                  Opacity(
+                      child: Image.asset(
+                        "assets/images/noBackgroundLogo.png",
+                        color: Colors.black,
+                        fit: BoxFit.contain,
+                        width: 300,
+                      ),
+                      opacity: 0.2),
+                  ClipRect(
+                      child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                          child: Image.asset(
+                            "assets/images/noBackgroundLogo.png",
+                            fit: BoxFit.contain,
+                            width: 300,
+                          )))
+                ]),
               ),
             ),
           ),
