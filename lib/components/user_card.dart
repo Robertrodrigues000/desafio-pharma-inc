@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_font_icons/flutter_font_icons.dart';
 import 'package:pharmaapp/constants/colors.dart';
 import 'package:pharmaapp/model/model.dart';
 
 class UserCard extends StatefulWidget {
-  final dynamic user;
+  final User? user;
   UserCard({Key? key, this.user}) : super(key: key);
 
   @override
@@ -11,17 +12,34 @@ class UserCard extends StatefulWidget {
 }
 
 class _UserCardState extends State<UserCard> {
-    double profileHeight = 144;
+  double profileHeight = 144;
   double? top;
+  String? thumbnail;
+  String? name;
+  String? lastName;
+  String? middleName;
+  String? gender;
+  String? birth;
+  String? email;
+  String? phone;
+  String? country;
+  String? adress;
+  String? id;
 
   @override
   Widget build(BuildContext context) {
-    String thumbnail = widget.user?.picture?.thumbnail ?? "";
-    String name = widget.user?.name?.first ?? "";
-    String lastName = widget.user?.name?.last ?? "";
-    String middleName = widget.user?.name?.title ?? "";
-    String gender = widget.user?.gender ?? "";
-    String birth = widget.user?.dob?.date ?? "";
+    thumbnail = widget.user?.picture?.thumbnail ?? "";
+    name = widget.user?.name?.first ?? "";
+    lastName = widget.user?.name?.last ?? "";
+    middleName = widget.user?.name?.title ?? "";
+    gender = widget.user?.gender ?? "";
+    email = widget.user?.email ?? "";
+    birth = widget.user?.dob?.date ?? "";
+    phone = widget.user?.phone ?? "";
+    country = widget.user?.nat ?? "";
+    adress =
+        (widget.user?.location?.street?.name ?? "") + ", " + (widget.user?.location?.street?.number.toString() ?? "");
+    id = widget.user?.id?.value ?? "";
 
     return InkWell(
       onTap: () => _configurandoModalBottomSheet(context, widget.user),
@@ -47,7 +65,7 @@ class _UserCardState extends State<UserCard> {
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Center(child: CircleAvatar(radius: 30, backgroundImage: NetworkImage(thumbnail))),
+              child: Center(child: CircleAvatar(radius: 30, backgroundImage: NetworkImage(thumbnail!))),
             ),
             Padding(
               padding: const EdgeInsets.all(6.0),
@@ -71,7 +89,7 @@ class _UserCardState extends State<UserCard> {
                       children: <Widget>[
                         Container(
                           child: Text(
-                            capitalize(gender),
+                            capitalize(gender!),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -81,7 +99,7 @@ class _UserCardState extends State<UserCard> {
                         ),
                         Container(
                           child: Text(
-                            dateFormatDDMMYYYY(birth) ?? "",
+                            dateFormatDDMMYYYY(birth!) ?? "",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -126,24 +144,10 @@ class _UserCardState extends State<UserCard> {
                 ),
                 Container(
                   margin: EdgeInsets.only(top: profileHeight / 2),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
-                    children: <Widget>[
-                      Wrap(
-                        children: [
-                          _chartTitle(user),
-                          _chartSubTitle(user),
-                        ],
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.phone),
-                        title: Text('Call phone'),
-                        onTap: () {
-                          print('Call phone');
-                        },
-                      ),
-                    ],
+                  child: ListView(
+                    shrinkWrap: true,
+                    physics: BouncingScrollPhysics(),
+                    children: _alertDetailsViewContents(context, user),
                   ),
                 ),
               ],
@@ -152,8 +156,53 @@ class _UserCardState extends State<UserCard> {
         });
   }
 
+  List<Widget> _alertDetailsViewContents(BuildContext context, user) {
+    return <Widget>[
+      _chartTitle(user),
+      _chartSubTitle(user),
+      customListTile(titleText: "Email: $email", leading: MaterialCommunityIcons.mail),
+      customListTile(titleText: "Gênero: ${capitalize(gender!)}", leading: FontAwesome.transgender),
+      customListTile(titleText: "Nascimento: ${dateFormatDDMMYYYY(birth!)}", leading: FontAwesome.birthday_cake),
+      customListTile(titleText: "Telefone: $phone", leading: FontAwesome.phone),
+      customListTile(titleText: "Nacionalidade: $country", leading: FontAwesome.globe),
+      customListTile(titleText: "Endereço: $adress", leading: MaterialCommunityIcons.map_marker_radius_outline),
+      customListTile(titleText: "Id: $id", leading: FontAwesome.id_card_o),
+    ];
+  }
 
-  
+  Widget customListTile({String? titleText, IconData? leading, TextAlign align = TextAlign.start}) {
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.only(left: 10),
+          leading: Icon(
+            leading,
+            color: AppColors.orange,
+          ),
+          title: Text(titleText ?? "", style: TextStyle(color: Colors.black), textAlign: align),
+        ),
+        separator()
+      ],
+    );
+  }
+
+  Widget separator() {
+    return Container(
+      height: 1.0,
+      width: double.infinity,
+      color: Colors.black12,
+    );
+  }
+//   Imagem
+// Nome completo
+// Email
+// Gênero
+// Data de nascimento
+// Telefone
+// Nacionalidade
+// Endereço
+// ID (Número de identificação)
+
   Center _chartTitle(User user) {
     return Center(
       child: Text(
@@ -172,7 +221,6 @@ class _UserCardState extends State<UserCard> {
       ),
     );
   }
-
 
   String capitalize(String s) => s[0].toUpperCase() + s.substring(1);
 

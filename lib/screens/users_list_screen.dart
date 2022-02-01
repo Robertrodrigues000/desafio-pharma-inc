@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:pharmaapp/components/filter.dart';
 import 'package:pharmaapp/components/user_card.dart';
 import 'package:pharmaapp/constants/colors.dart';
 import 'package:http/http.dart' as http;
+import 'package:pharmaapp/helpers/diacritics.dart';
 import 'package:pharmaapp/model/model.dart';
 
 class UsersListScreen extends StatefulWidget {
@@ -16,6 +18,11 @@ class UsersListScreen extends StatefulWidget {
 class _UsersListScreenState extends State<UsersListScreen> {
   TextEditingController _searchTextController = new TextEditingController();
   final ScrollController _scrollController = new ScrollController();
+  List<dynamic> firstFilteredList = [];
+  List<dynamic> reFilteredList = [];
+  String recordLastFilter = '';
+  bool isFiltered = false;
+
   double profileHeight = 144;
   double? top;
   late Model model;
@@ -39,7 +46,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   }
 
   Future getDataFromApi() async {
-    final url = await http.get(Uri.parse("https://randomuser.me/api/?results=50"));
+    final url = await http.get(Uri.parse("https://randomuser.me/api/?results=10"));
     model = Model.fromJson(jsonDecode(url.body));
     setState(() {
       if (userList == null || userList!.isEmpty) {
@@ -53,6 +60,14 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    dynamic presentingList = [];
+    if (_searchTextController.text.length < 1) {
+      presentingList = userList;
+      isFiltered = false;
+    } else {
+      presentingList = reFilteredList;
+      isFiltered = true;
+    }
     return GestureDetector(
       onTap: () {
         FocusScopeNode currentFocus = FocusScope.of(context);
@@ -63,56 +78,78 @@ class _UsersListScreenState extends State<UsersListScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           title: Text("Pharma Inc"),
+          backgroundColor: AppColors.lightBlue,
         ),
-        bottomNavigationBar: Stack(
-          children: [
-            Container(
-              height: 50,
-              color: AppColors.jadeGreen,
-              child: Center(
-                  child: Icon(
-                Icons.house,
-                size: 40,
-                color: Colors.white,
-              )),
-            ),
-          ],
+        bottomNavigationBar: InkWell(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            height: 50,
+            color: AppColors.lightBlue,
+            child: Center(
+                child: Icon(
+              Icons.house,
+              size: 40,
+              color: Colors.white,
+            )),
+          ),
         ),
         body: userList == null
-            ? Center(
-                child: CircularProgressIndicator(),
-              )
-            : Padding(
-                padding: const EdgeInsets.only(top: 40, right: 8, left: 8),
-                child: Column(
-                  children: [
-                    Center(
-                      child: Text(
-                        "Lista de Usuários",
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    _renderFilter(),
-                    SizedBox(height: 30),
-                    Expanded(
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        itemCount: (userList?.length ?? 0) + 1,
-                        itemBuilder: (context, index) {
-                          dynamic user;
-                          if (index < (userList?.length ?? 0)) {
-                            user = userList?[index];
-                            user = UserCard(user: user);
-                          } else {
-                            user = _renderProgressIndicator();
-                          }
-                          return user;
-                        },
-                      ),
-                    ),
-                  ],
+            ? Stack(fit: StackFit.expand, children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [
+                      AppColors.lightBlue,
+                      Colors.white,
+                    ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                  ),
                 ),
+                Center(
+                  child: CircularProgressIndicator(),
+                )
+              ])
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        AppColors.lightBlue,
+                        Colors.white,
+                      ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 0, right: 8, left: 8),
+                    child: Column(
+                      children: [
+                        Filter(
+                          searchTextController: _searchTextController,
+                          userList: userList,
+                          function: filterFunction(),
+                        ),
+                        SizedBox(height: 20),
+                        Expanded(
+                          child: ListView.builder(
+                            controller: _scrollController,
+                            itemCount: (presentingList?.length ?? 0) + 1,
+                            itemBuilder: (context, index) {
+                              dynamic user;
+                              if (index < (presentingList?.length ?? 0)) {
+                                user = presentingList?[index];
+                                user = UserCard(user: user);
+                              } else {
+                                user = isFiltered ? Container() : _renderProgressIndicator();
+                              }
+                              return user;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
       ),
     );
@@ -124,70 +161,55 @@ class _UsersListScreenState extends State<UsersListScreen> {
         bottom: 120,
         top: 10,
       ),
-      child: Column(
-        children: [
-          Center(
-            child: Container(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.jadeGreen,
-                  ),
-                  backgroundColor: Colors.transparent,
-                )),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Padding _renderFilter() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 40, right: 8, bottom: 8, left: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _searchTextController,
-              decoration: InputDecoration(
-                  suffixIcon: Icon(
-                    Icons.search,
-                    color: Colors.black,
-                    size: 20.0,
-                  ),
-                  hintText: 'Buscar usuário',
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(width: 5, color: AppColors.jadeGreen),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(width: 5, color: AppColors.orange),
+      child: Center(
+        child: Container(
+          width: 200,
+          child: Row(
+            children: [
+              Container(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.orange,
+                    ),
+                    backgroundColor: Colors.transparent,
                   )),
-            ),
+              SizedBox(width: 20),
+              Text(
+                "Buscando mais...",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.orange),
+              )
+            ],
           ),
-          SizedBox(width: 30),
-          InkWell(child: Icon(Icons.filter_alt, size: 30))
-        ],
+        ),
       ),
     );
   }
 
-  Wrap listTiles() {
-    return Wrap(
-      children: <Widget>[
-        ListTile(leading: new Icon(Icons.music_note), title: new Text('Músicas'), onTap: () => {}),
-        ListTile(
-          leading: new Icon(Icons.videocam),
-          title: new Text('Videos'),
-          onTap: () => {},
-        ),
-        ListTile(
-          leading: new Icon(Icons.satellite),
-          title: new Text('Tempo'),
-          onTap: () => {},
-        ),
-      ],
-    );
+  Function filterFunction() {
+    return (text) async => await _searchForMatchingResults(text);
+  }
+
+  Future _searchForMatchingResults(String text) async {
+    await searchFilteredResults(text);
+    setState(() {});
+  }
+
+  Future<void> searchFilteredResults(String text) async {
+    recordLastFilter = text;
+    var result = _filterOperators(text);
+    if (result is List) {
+      firstFilteredList = result;
+      reFilteredList = firstFilteredList;
+    }
+  }
+
+  List<User> _filterOperators(String searchText) {
+    List<User> newUserList = [];
+    newUserList = userList!
+        .where((element) => Diacritics.remove(element.nat!.toLowerCase()).contains(searchText.toLowerCase()))
+        .toList();
+    return newUserList;
   }
 }
