@@ -1,30 +1,60 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility that Flutter provides. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+import 'package:pharmaapp/model/model.dart';
+import 'package:pharmaapp/service/user_list_service.dart';
 
-import 'package:pharmaapp/main.dart';
+import 'fetch_mock.dart';
 
+// Generate a MockClient using the Mockito package.
+// Create new instances of this class in each test.
+@GenerateMocks([http.Client])
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp());
+  group('test api', () {
+    test("get data sucessfull", () async {
+      UserListMock userlistmock = UserListMock();
+      UserListService _userListService = UserListService();
+      Model model = Model(
+        results: [User(name: Name(title: "Mrs", first: "Alea", last: "Christoffersen"), gender: "female")],
+        info: Info(seed: "2f10116f1799d353", results: 1, page: 1, version: "1.3"),
+      );
+      dynamic result;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      when(userlistmock.getDataFormApi()).thenAnswer((any) async => model);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      result = await _userListService.getDataFormApi();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+      verify(userlistmock.getDataFormApi()).called(1);
+      expect(result is List<User>, true);
+      // expect(result[0], 200);
+      // expect(resultList[0].hasMore, true);
+      // expect(resultList[0].cursor, 'ABC');
+      // expect(resultList[1] is List<Alert>, true);
+      // expect(resultList[1].length, 1);
+      // expect(resultList[1][0].description, 'Alert Zero');
+    });
+    test('throws an exception if the http call completes with an error', () async {
+      UserListMock Mokeduserlist = UserListMock();
+      UserListService _userListService = UserListService();
+      Model model = Model(
+        results: [User(name: Name(title: "Mrs", first: "Alea", last: "Christoffersen"), gender: "female")],
+        info: Info(seed: "2f10116f1799d353", results: 1, page: 1, version: "1.3"),
+      );
+      dynamic result;
+      Response searchResponse = Response(
+        'TESTE',
+        404,
+        headers: {'pagination-has-more': 'false', 'pagination-total-items': '0', 'pagination-cursor': 'ABC'},
+      );
+
+      when(Mokeduserlist.getDataFormApi()).thenAnswer((any) async => null);
+
+      result = await _userListService.getDataFormApi();
+
+      verify(Mokeduserlist.getDataFormApi()).called(1);
+      expect(result is List<User>, true);
+    });
   });
 }

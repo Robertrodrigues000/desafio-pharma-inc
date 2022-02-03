@@ -1,27 +1,31 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:pharmaapp/components/filter.dart';
+import 'package:pharmaapp/components/country_filter.dart';
+import 'package:pharmaapp/components/gender_filter.dart';
 import 'package:pharmaapp/components/user_card.dart';
 import 'package:pharmaapp/constants/colors.dart';
-import 'package:http/http.dart' as http;
 import 'package:pharmaapp/helpers/diacritics.dart';
 import 'package:pharmaapp/model/model.dart';
+import 'package:pharmaapp/service/user_list_service.dart';
 
 class UsersListScreen extends StatefulWidget {
   UsersListScreen({Key? key}) : super(key: key);
 
   @override
-  _UsersListScreenState createState() => _UsersListScreenState();
+  UsersListScreenState createState() => UsersListScreenState();
 }
 
-class _UsersListScreenState extends State<UsersListScreen> {
+class UsersListScreenState extends State<UsersListScreen> {
   TextEditingController _searchTextController = new TextEditingController();
   final ScrollController _scrollController = new ScrollController();
-  List<dynamic> firstFilteredList = [];
+  final UserListService _userListService = new UserListService();
   List<dynamic> reFilteredList = [];
   String recordLastFilter = '';
   bool isFiltered = false;
+  bool isGenderFilter = false;
+  String wichGender = "";
+  bool countryFilterHasFocus = false;
 
   double profileHeight = 144;
   double? top;
@@ -31,10 +35,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
   @override
   void initState() {
     super.initState();
-    getDataFromApi();
-    _scrollController.addListener(() {
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) async {
+      userList = await getDataFromService();
+    });
+    _scrollController.addListener(() async {
       if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-        getDataFromApi();
+        userList = await getDataFromService();
       }
     });
   }
@@ -45,23 +51,28 @@ class _UsersListScreenState extends State<UsersListScreen> {
     super.dispose();
   }
 
-  Future getDataFromApi() async {
-    final url = await http.get(Uri.parse("https://randomuser.me/api/?results=10"));
-    model = Model.fromJson(jsonDecode(url.body));
-    setState(() {
-      if (userList == null || userList!.isEmpty) {
-        userList = model.results!;
-      } else {
-        userList = [...?userList, ...?model.results];
-        if (mounted) setState(() {});
-      }
-    });
+  Future<List<User>> getDataFromService() async {
+    dynamic newList;
+    try {
+      model = await _userListService.getDataFormApi();
+      setState(() {
+        if (userList == null || userList!.isEmpty) {
+          newList = model.results!;
+        } else {
+          newList = [...?userList, ...?model.results];
+          if (mounted) setState(() {});
+        }
+      });
+      return newList;
+    } catch (e) {
+      throw Exception('Failed to load data: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     dynamic presentingList = [];
-    if (_searchTextController.text.length < 1) {
+    if (_searchTextController.text.length < 1 && !isGenderFilter) {
       presentingList = userList;
       isFiltered = false;
     } else {
@@ -71,9 +82,10 @@ class _UsersListScreenState extends State<UsersListScreen> {
     return GestureDetector(
       onTap: () {
         FocusScopeNode currentFocus = FocusScope.of(context);
-
+        countryFilterHasFocus = true;
         if (!currentFocus.hasPrimaryFocus) {
           currentFocus.unfocus();
+          countryFilterHasFocus = false;
         }
       },
       child: Scaffold(
@@ -95,71 +107,88 @@ class _UsersListScreenState extends State<UsersListScreen> {
             )),
           ),
         ),
-        body: userList == null
-            ? Stack(fit: StackFit.expand, children: [
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [
-                      AppColors.lightBlue,
-                      Colors.white,
-                    ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                  ),
-                ),
-                Center(
-                  child: CircularProgressIndicator(),
-                )
-              ])
-            : Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [
-                        AppColors.lightBlue,
-                        Colors.white,
-                      ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 0, right: 8, left: 8),
-                    child: Column(
-                      children: [
-                        Filter(
-                          searchTextController: _searchTextController,
-                          userList: userList,
-                          function: filterFunction(),
-                        ),
-                        SizedBox(height: 20),
-                        Expanded(
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            itemCount: (presentingList?.length ?? 0) + 1,
-                            itemBuilder: (context, index) {
-                              dynamic user;
-                              if (index < (presentingList?.length ?? 0)) {
-                                user = presentingList?[index];
-                                user = UserCard(user: user);
-                              } else {
-                                user = isFiltered ? Container() : _renderProgressIndicator();
-                              }
-                              return user;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+        body: userList == null ? _renderNullList() : _renderListBody(presentingList),
       ),
     );
+  }
+
+  Stack _renderListBody(presentingList) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [
+              AppColors.jadeGreen,
+              Colors.white,
+            ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 20, right: 8, left: 8),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    CountryFilter(
+                      function: (text) => filterGenderFunction(text),
+                      searchTextController: _searchTextController,
+                    ),
+                    SizedBox(width: 20),
+                    GenderFilter(
+                      wichGender: wichGender,
+                      filterGenderFunction: (text) => filterGenderFunction(text),
+                    )
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: (presentingList?.length ?? 0) + 1,
+                  itemBuilder: (context, index) {
+                    dynamic user;
+                    if (index < (presentingList?.length ?? 0)) {
+                      user = presentingList?[index];
+                      user = UserCard(user: user);
+                    } else {
+                      user = isFiltered ? Container() : _renderProgressIndicator();
+                    }
+                    return user;
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Stack _renderNullList() {
+    return Stack(fit: StackFit.expand, children: [
+      Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [
+            AppColors.jadeGreen,
+            Colors.white,
+          ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+        ),
+      ),
+      Center(
+        child: CircularProgressIndicator(),
+      )
+    ]);
   }
 
   Widget _renderProgressIndicator() {
     return Container(
       padding: EdgeInsets.only(
-        bottom: 120,
-        top: 10,
+        bottom: 80,
+        top: 40,
       ),
       child: Center(
         child: Container(
@@ -187,29 +216,34 @@ class _UsersListScreenState extends State<UsersListScreen> {
     );
   }
 
-  Function filterFunction() {
-    return (text) async => await _searchForMatchingResults(text);
-  }
-
-  Future _searchForMatchingResults(String text) async {
-    await searchFilteredResults(text);
+  void searchFilteredResults(String text) {
+    recordLastFilter = text;
+    dynamic result = _countryFilter(text);
+    reFilteredList = result;
     setState(() {});
   }
 
-  Future<void> searchFilteredResults(String text) async {
-    recordLastFilter = text;
-    var result = _filterOperators(text);
-    if (result is List) {
-      firstFilteredList = result;
-      reFilteredList = firstFilteredList;
-    }
-  }
-
-  List<User> _filterOperators(String searchText) {
+  List<User> _countryFilter(String searchText) {
     List<User> newUserList = [];
     newUserList = userList!
         .where((element) => Diacritics.remove(element.nat!.toLowerCase()).contains(searchText.toLowerCase()))
         .toList();
     return newUserList;
+  }
+
+  void filterGenderFunction(text) {
+    _scrollController.animateTo(0, duration: Duration(milliseconds: 500), curve: Curves.linear);
+    wichGender = text;
+    if (text == "") {
+      isGenderFilter = false;
+      reFilteredList = userList!;
+      setState(() {});
+    } else {
+      isGenderFilter = true;
+      List<User> newUserList = [];
+      newUserList = userList!.where((element) => element.gender == text).toList();
+      reFilteredList = newUserList;
+      setState(() {});
+    }
   }
 }

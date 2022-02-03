@@ -13,7 +13,7 @@ class UserCard extends StatefulWidget {
 
 class _UserCardState extends State<UserCard> {
   double profileHeight = 144;
-  double? top;
+  double? bottom;
   String? thumbnail;
   String? name;
   String? lastName;
@@ -83,7 +83,7 @@ class _UserCardState extends State<UserCard> {
                     ),
                   ),
                   Container(
-                    width: 220,
+                    width: 200,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
@@ -119,8 +119,8 @@ class _UserCardState extends State<UserCard> {
     );
   }
 
-  void _configurandoModalBottomSheet(context, user) {
-    top = MediaQuery.of(context).size.height * 0.7 - profileHeight / 2;
+  dynamic _configurandoModalBottomSheet(context, user) {
+    bottom = MediaQuery.of(context).size.height * 0.7 - profileHeight / 2;
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.white,
@@ -136,11 +136,16 @@ class _UserCardState extends State<UserCard> {
               alignment: Alignment.center,
               children: [
                 Positioned(
-                  bottom: top,
+                  bottom: bottom,
                   child: CircleAvatar(
                       radius: profileHeight / 2,
                       backgroundColor: Colors.grey.shade800,
                       backgroundImage: NetworkImage(user?.picture?.large ?? "")),
+                ),
+                Positioned(
+                  top: 20,
+                  right: 20,
+                  child: InkWell(onTap: Navigator.of(context).pop, child: Icon(Icons.close)),
                 ),
                 Container(
                   margin: EdgeInsets.only(top: profileHeight / 2),
