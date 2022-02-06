@@ -1,12 +1,20 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:pharmaapp/model/model.dart';
 
 
 class UserListService {
+  final url ="https://randomuser.me/api/?results=50";
+  Client client = Client();
+
   Future<dynamic> getDataFormApi() async {
-          final url = await http.get(Uri.parse("https://randomuser.me/api/?results=50"));
-      return Model.fromJson(jsonDecode(url.body));
+    try {
+      final response = await client.get(Uri.parse(url));
+      return Model.fromJson(jsonDecode(response.body));
+    } catch (e) {
+      throw e;
+    }
+          
 
   }
 }

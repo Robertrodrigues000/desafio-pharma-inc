@@ -2,9 +2,27 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:pharmaapp/constants/colors.dart';
+import 'package:pharmaapp/screens/users_list_screen.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
+
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _navigateToHome();
+  }
+
+  void _navigateToHome() async {
+    await Future.delayed(Duration(milliseconds: 1500), () {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => UsersListScreen()));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

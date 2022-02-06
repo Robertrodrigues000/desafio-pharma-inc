@@ -7,6 +7,7 @@ import 'package:pharmaapp/components/user_card.dart';
 import 'package:pharmaapp/constants/colors.dart';
 import 'package:pharmaapp/helpers/diacritics.dart';
 import 'package:pharmaapp/model/model.dart';
+import 'package:pharmaapp/screens/splash_screen.dart';
 import 'package:pharmaapp/service/user_list_service.dart';
 
 class UsersListScreen extends StatefulWidget {
@@ -95,7 +96,7 @@ class UsersListScreenState extends State<UsersListScreen> {
           backgroundColor: AppColors.lightBlue,
         ),
         bottomNavigationBar: InkWell(
-          onTap: () => Navigator.of(context).pop(),
+          onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashScreen())),
           child: Container(
             height: 50,
             color: AppColors.lightBlue,
@@ -134,7 +135,7 @@ class UsersListScreenState extends State<UsersListScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     CountryFilter(
-                      function: (text) => filterGenderFunction(text),
+                      function: (text) => searchFilteredResults(text),
                       searchTextController: _searchTextController,
                     ),
                     SizedBox(width: 20),
