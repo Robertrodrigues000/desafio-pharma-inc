@@ -11,15 +11,12 @@
   <img src="assets/images/UserDetail.png" width="100" />
 </p>
 
----
 ## 🔖 Sobre
 
 - O projeto **PharmaInc** é um aplicativo para apresentar um banco de dados de clientes, com filtros por nacionalidade e gênero, lista com loading automático e detalhes do cliente, proposto como desafio pelo *Coodesh*.
----
 ## 🚀 Tecnologias
 
 - Dart(Flutter)
----
 ## Instalação
 
 ```bash
