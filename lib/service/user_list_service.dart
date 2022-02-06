@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart';
 import 'package:pharmaapp/model/model.dart';
 
-
 class UserListService {
-  final url ="https://randomuser.me/api/?results=50";
+  final url = "https://randomuser.me/api/?results=50";
   Client client = Client();
 
   Future<dynamic> getDataFormApi() async {
@@ -14,7 +13,5 @@ class UserListService {
     } catch (e) {
       throw e;
     }
-          
-
   }
 }
